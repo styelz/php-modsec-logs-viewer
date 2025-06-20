@@ -1,0 +1,130 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #181a1b;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 0px 20px;
+}
+
+h1 {
+    color: #fafafa;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #232526;
+    color: #e0e0e0;
+}
+
+th, td {
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #263238;
+    color: #fff;
+    white-space: nowrap; /* Prevent header text from wrapping */
+    vertical-align: middle; /* Center header content vertically */
+    text-align: left;
+    height: 30px; /* Ensures consistent header height */
+}
+
+tr:nth-child(even) {
+    background-color: #222325;
+}
+
+tr:hover {
+    background-color: #33373a;
+}
+
+.log-entry {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #333;
+    background-color: #232526;
+}
+
+.timestamp {
+    font-weight: bold;
+    color: #b0bec5;
+}
+
+.message {
+    color: #e0e0e0;
+}
+
+#closeModalBtn {
+    float: right;
+    background: #263238;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+#closeModalBtn:hover {
+    background: #37474f;
+}
+
+#rawLogModal {
+    cursor: move;
+    position: fixed;
+    top: 50px;
+    left: 30%;
+    background: #232526;           /* dark background */
+    border: 3px solid #4e524e;     /* green border for contrast */
+    padding: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    min-height: 100px;
+    max-width: 75vw;
+    max-height: 90vh;
+    overflow: auto;
+    color: #e0e0e0;                /* light text */
+    box-shadow: 0 4px 24px #000a;  /* subtle shadow for depth */
+}
+
+#rawLogModal pre {
+    color: #e0e0e0;
+    background: #181a1b;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 1em;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.sort-icon {
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: 5px;
+    vertical-align: middle;
+    color: #b0bec5;
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+#hostnameSearch {
+    width:140px; 
+    background:#232526; 
+    color:#e0e0e0; 
+    border:1px solid #444; 
+    border-radius:6px; 
+    font-size:0.75em
+}
+
+/* Severity color classes for dark theme */
+.sev_critical, .sev-critical { color: #ff5252; }
+.sev_error, .sev-error { color: #ff9800; }
+.sev_warning, .sev-warning { color: #ffd600; }
+.sev_notice, .sev-notice { color: #40c4ff; }
+.sev_info, .sev-info { color: #69f0ae; }
+.sev_alert, .sev-alert { color: #f06292; }
+.sev_emergency, .sev-emergency { color: #bcaaa4; }
