@@ -1,5 +1,7 @@
 # PHP ModSecurity Logs Viewer
 
+![image](https://github.com/user-attachments/assets/67c66d39-6821-4b4e-a646-f62057620ed9)
+
 ## Overview
 A lightweight web application for viewing and analyzing ModSecurity logs in a searchable, sortable, and color-coded table. Each unique rule ID is assigned a consistent pastel color for easy visual grouping.
 
