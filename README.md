@@ -1,30 +1,33 @@
 # PHP ModSecurity Logs Viewer
 
 ## Overview
-The PHP ModSecurity Logs Viewer is a lightweight web application for viewing and analyzing ModSecurity logs in a user-friendly, searchable, and color-coded interface.
+A lightweight web application for viewing and analyzing ModSecurity logs in a searchable, sortable, and color-coded table. Each unique rule ID is assigned a consistent pastel color for easy visual grouping.
+
+> **This project was created with the help of AI in just a few hours.**
 
 ## Project Structure
 ```
 modsec-web/
-├── index.php      # Main PHP application file
+├── index.php      # Main PHP application file (parses and displays logs)
 └── style.css      # CSS styles for the web application
 ```
 
 ## Setup Instructions
 1. Clone the repository:
-   ```
+   ```sh
    git clone https://github.com/styelz/php-modsec-logs-viewer.git
    ```
 2. Navigate to the project directory:
-   ```
+   ```sh
    cd php-modsec-logs-viewer
    ```
 3. Ensure you have a web server with PHP support (e.g., Apache, Nginx) set up.
 4. Place the project files in the web server's document root.
+5. Make sure your ModSecurity log file is accessible and update the path in `index.php` if needed.
 
 ## Usage Guidelines
 1. Open your web browser and navigate to `http://localhost/php-modsec-logs-viewer/index.php`.
-2. The application will display the parsed ModSecurity logs.
+2. The application will display the parsed ModSecurity logs in a table.
 3. Use the search box in the "Target" column header to filter by hostname.
 4. Click any row to view the full raw log entry in a modal.
 
@@ -34,7 +37,7 @@ modsec-web/
 - **Sortable columns**: Click any column header to sort.
 - **Live search**: Filter logs by hostname directly in the table header.
 - **Severity highlighting**: Severity levels are color-coded for quick scanning.
-- **Pastel rule ID colors**: Each unique rule ID is shown in a different pastel color.
+- **Pastel rule ID colors**: Each unique rule ID is shown in a consistent pastel color.
 - **Raw log modal**: Click a row to view the full raw log in a modal window.
 - **Responsive design** for desktop and mobile browsers.
 
@@ -44,12 +47,10 @@ ModSecurity logs contain information about security events detected by the ModSe
 - IP address of the client
 - Request method and URL
 - Response status code
-- Anomaly score and rule ID
+- Rule ID and severity
+- Additional metadata
 
 Understanding these logs is crucial for identifying potential security threats and taking appropriate actions.
 
-## Contributing
-Contributions are welcome! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
-
 ## License
-This project is licensed under the MIT License. See the LICENSE file
+This project is licensed under the MIT License. See the LICENSE file for more details.

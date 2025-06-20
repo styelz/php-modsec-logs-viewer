@@ -53,6 +53,18 @@ if (file_exists($filename) && is_readable($filename)) {
     $error = "File does not exist or is not readable.";
 }
 
+// Step 1: Build a mapping of rule_id => color index
+$ruleIdColorMap = [];
+$colorPaletteSize = 10; // Number of pastel colors you have in CSS
+$colorIdx = 0;
+foreach ($logs as $log) {
+    $rid = $log['rule_id'];
+    if (!isset($ruleIdColorMap[$rid])) {
+        $ruleIdColorMap[$rid] = $colorIdx % $colorPaletteSize;
+        $colorIdx++;
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -94,11 +106,17 @@ foreach ($logs as $log) {
     // Map severity to color class
     $sev = strtolower($log['severity']);
     $sevClass = "sev-{$sev}";
+
+    // Use the mapping for consistent pastel color per unique rule_id
+    $ruleId = $log['rule_id'];
+    $colorIdx = $ruleIdColorMap[$ruleId];
+    $ruleIdClass = "ruleid-color-$colorIdx";
+
     echo "<tr class='log-row' data-raw-log='" . htmlspecialchars($log['raw_log'], ENT_QUOTES, "UTF-8") . "'>";
     echo "<td style='width:200px'>" . $log['datetime'] . "</td>";
     echo "<td>" . htmlspecialchars($log['hostname']) . "</td>";
     echo "<td>" . htmlspecialchars($log['message']) . "</td>";
-    echo "<td>" . htmlspecialchars($log['rule_id']) . "</td>";
+    echo "<td class='$ruleIdClass'>" . htmlspecialchars($log['rule_id']) . "</td>";
     echo "<td>" . htmlspecialchars($log['client_ip']) . "</td>";
     echo "<td class='$sevClass'>" . htmlspecialchars($log['severity']) . "</td>";
     echo "</tr>";

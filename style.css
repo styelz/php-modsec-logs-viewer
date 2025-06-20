@@ -128,3 +128,15 @@ tr:hover {
 .sev_info, .sev-info { color: #69f0ae; }
 .sev_alert, .sev-alert { color: #f06292; }
 .sev_emergency, .sev-emergency { color: #bcaaa4; }
+
+/* Pastel color classes for rule IDs */
+.ruleid-color-0 { color: #a3c9e2; }
+.ruleid-color-1 { color: #b6e3b6; }
+.ruleid-color-2 { color: #ffe0b2; }
+.ruleid-color-3 { color: #f7b2b7; }
+.ruleid-color-4 { color: #e2c9e2; }
+.ruleid-color-5 { color: #f9e79f; }
+.ruleid-color-6 { color: #b2dfdb; }
+.ruleid-color-7 { color: #d1c4e9; }
+.ruleid-color-8 { color: #c8e6c9; }
+.ruleid-color-9 { color: #ffecb3; }
