@@ -86,12 +86,15 @@ foreach ($logs as $log) {
     <tr>
         <th data-col="datetime" class="sortable">Date <span class="sort-icon">&#8595;</span></th>
         <th data-col="hostname" class="sortable" style="white-space:nowrap;">
-            <span style="display:inline-flex; align-items:center; gap:6px; width:100%; justify-content:space-between;">
+            <span class="target">
                 <span>
                     Target
                     <span class="sort-icon">&#8597;</span>
                 </span>
-                <input type="text" id="hostnameSearch" placeholder="Filter..."/>
+                <span style="position:relative; display:inline-block;">
+                    <input type="text" id="hostnameSearch" placeholder="Filter...">
+                    <span id="clearHostnameSearch">&#10005;</span>
+                </span>
             </span>
         </th>
         <th data-col="message" class="sortable">Message <span class="sort-icon">&#8597;</span></th>
@@ -174,6 +177,8 @@ foreach ($logs as $log) {
         $('#rawLogModal').on('mousedown', function(e) {
             if (e.target.id === 'closeModalBtn') return;
             isDragging = true;
+            // Make modal transparent while dragging
+            $(this).css('opacity', '0.8');
             offsetX = e.clientX - $(this).position().left;
             offsetY = e.clientY - $(this).position().top;
             $(document).on('mousemove.draggable', function(e2) {
@@ -189,6 +194,8 @@ foreach ($logs as $log) {
             });
             $(document).on('mouseup.draggable', function() {
                 isDragging = false;
+                // Restore modal opacity
+                $('#rawLogModal').css('opacity', '1');
                 $(document).off('.draggable');
             });
         });
@@ -220,6 +227,28 @@ foreach ($logs as $log) {
                         tdA = dateA;
                         tdB = dateB;
                     }
+                } else if (col === 'client_ip') {
+                    // Sort IP addresses numerically
+                    function ip2num(ip) {
+                        return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+                    }
+                    tdA = ip2num(tdA);
+                    tdB = ip2num(tdB);
+                } else if (col === 'hostname') {
+                    // Helper to check if a string is an IPv4 address
+                    function isIPv4(str) {
+                        return /^(\d{1,3}\.){3}\d{1,3}$/.test(str);
+                    }
+                    function ip2num(ip) {
+                        return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+                    }
+                    const aIsIp = isIPv4(tdA);
+                    const bIsIp = isIPv4(tdB);
+                    if (aIsIp && bIsIp) {
+                        tdA = ip2num(tdA);
+                        tdB = ip2num(tdB);
+                    }
+                    // else: leave as strings for normal comparison
                 } else {
                     let numA = parseFloat(tdA.replace(/[^\d.-]/g, ''));
                     let numB = parseFloat(tdB.replace(/[^\d.-]/g, ''));
@@ -274,6 +303,12 @@ foreach ($logs as $log) {
                 var hostname = $(this).find('td').eq(1).text().toLowerCase();
                 $(this).toggle(hostname.indexOf(val) !== -1);
             });
+            $('#clearHostnameSearch').toggle($(this).val().length > 0);
+        });
+
+        $('#clearHostnameSearch').on('click', function() {
+            $('#hostnameSearch').val('').trigger('input').focus();
+            $(this).hide();
         });
     });
     </script>

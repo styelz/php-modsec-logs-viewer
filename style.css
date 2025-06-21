@@ -111,13 +111,35 @@ tr:hover {
     user-select: none;
 }
 
+.target {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    justify-content: space-between;
+    position: relative;
+}
+
 #hostnameSearch {
-    width:140px; 
-    background:#232526; 
-    color:#e0e0e0; 
-    border:1px solid #444; 
-    border-radius:6px; 
-    font-size:0.75em
+    width: 140px;
+    background: #232526;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 6px;
+    font-size: 0.75em;
+    padding-right: 20px;
+}
+
+#clearHostnameSearch {
+    display: none;
+    position: absolute;
+    right: 6px;
+    top: 45%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.7em;
+    user-select: none;
 }
 
 /* Severity color classes for dark theme */
