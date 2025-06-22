@@ -162,3 +162,21 @@ tr:hover {
 .ruleid-color-7 { color: #d1c4e9; }
 .ruleid-color-8 { color: #c8e6c9; }
 .ruleid-color-9 { color: #ffecb3; }
+
+#paginationControls {
+    margin: 18px 0;
+    text-align: center;
+}
+#paginationControls button {
+    background: #263238;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 0 8px;
+}
+#paginationControls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

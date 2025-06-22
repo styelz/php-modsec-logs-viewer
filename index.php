@@ -142,6 +142,59 @@ foreach ($logs as $log) {
     $(function() {
         let modalLastPos = null;
 
+        // --- Pagination variables ---
+        const rowsPerPage = 25;
+        let currentPage = 1;
+        let $allRows = $('tr.log-row');
+        let totalRows = $allRows.length;
+        let totalPages = Math.ceil(totalRows / rowsPerPage);
+
+        function renderTablePage(page) {
+            $allRows.hide();
+            $allRows.slice((page - 1) * rowsPerPage, page * rowsPerPage).show();
+            $('#paginationInfo').text(`Page ${page} of ${totalPages}`);
+            $('#prevPage').prop('disabled', page === 1);
+            $('#nextPage').prop('disabled', page === totalPages);
+        }
+
+        function updatePagination() {
+            $allRows = $('tr.log-row:visible, tr.log-row:hidden').filter(function() {
+                // Only count rows that are not filtered out
+                return $(this).css('display') !== 'none' || $(this).is(':visible');
+            });
+            totalRows = $allRows.length;
+            totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderTablePage(currentPage);
+        }
+
+        // Insert pagination controls after the table
+        $('table').after(`
+            <div id="paginationControls" style="margin:18px 0; text-align:center;">
+                <button id="prevPage">Prev</button>
+                <span id="paginationInfo"></span>
+                <button id="nextPage">Next</button>
+            </div>
+        `);
+
+        $('#prevPage').on('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTablePage(currentPage);
+            }
+        });
+        $('#nextPage').on('click', function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTablePage(currentPage);
+            }
+        });
+
+        // Initial render
+        renderTablePage(currentPage);
+
+        // --- Existing code for row click, modal, sorting, and search ---
+
         $('.log-row').on('click', function() {
             let rawLogObj = $(this).data('raw-log');
             if (typeof rawLogObj === 'string') {
@@ -304,6 +357,14 @@ foreach ($logs as $log) {
                 $(this).toggle(hostname.indexOf(val) !== -1);
             });
             $('#clearHostnameSearch').toggle($(this).val().length > 0);
+            // After filtering, re-apply pagination:
+            $allRows = $('tr.log-row').filter(function() {
+                return $(this).css('display') !== 'none';
+            });
+            totalRows = $allRows.length;
+            totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+            currentPage = 1;
+            renderTablePage(currentPage);
         });
 
         $('#clearHostnameSearch').on('click', function() {
