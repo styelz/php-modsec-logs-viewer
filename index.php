@@ -131,7 +131,7 @@ foreach ($logs as $log) {
     <div class="container">
         <div class="header-section">
             <div class="header-container">
-                <h1>ModSecurity Logs Viewer</h1>
+                <h1>ModSecurity Logs Viewer v1.0</h1>
                 <div class="status-indicator" style="color: #b0bec5; font-size: 0.9em; text-align: center;">
                     Showing <?php echo count($logs); ?> most recent entries
                     <?php if ($maxLogs < 2000): ?>
