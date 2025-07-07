@@ -1,6 +1,7 @@
 # ModSecurity Logs Viewer
 
-![image](https://github.com/user-attachments/assets/67c66d39-6821-4b4e-a646-f62057620ed9)
+![image](https://github.com/user-attachments/assets/3a543023-5fbf-47fd-9c89-cea7df4949aa)
+![image](https://github.com/user-attachments/assets/50980478-8fe3-4c5f-aeee-32221f29db1f)
 
 ## Overview
 A high-performance, secure web application for viewing and analyzing ModSecurity logs with advanced features including real-time search, interactive modals, pagination, and comprehensive security protections. Each unique rule ID is assigned a consistent pastel color for easy visual grouping.
