@@ -47,12 +47,15 @@ if (file_exists($filename) && is_readable($filename)) {
             while (($newlinePos = strrpos($buffer, "\n")) !== false && $logCount < $maxLogs) {
                 $line = substr($buffer, $newlinePos + 1);
                 if (!empty(trim($line))) {
-                    array_unshift($lines, $line);
+                    array_push($lines, $line); // Lines are added in newest-first order when reading backwards
                     $logCount++;
                 }
                 $buffer = substr($buffer, 0, $newlinePos);
             }
         }
+        
+        // Lines are already in newest-first order (descending) from the backwards reading process
+        // No need to reverse since we're reading from end of file and using array_push
         
         // Process the collected lines
         $pattern = '/(?P<timestamp>\d+\.\d+).*?\[client (?P<client_ip>[^\]]+)\].*?code (?P<status>\d+).*?phase (?P<phase>\d+)\).*?\[file "(?P<rule_file>[^"]+)"\] \[line "(?P<rule_line>\d+)"\] \[id "(?P<rule_id>\d+)"\] \[msg "(?P<message>[^"]+)"\] \[data "(?P<data>[^"]+)"\] \[severity "(?P<severity>[^"]+)"\] \[ver "(?P<version>[^"]+)"\](?P<tags>(?: \[tag "[^"]+"\])+).*?\[hostname "(?P<hostname>[^"]+)"\] \[uri "(?P<uri>[^"]+)"\] \[unique_id "(?P<unique_id>.*?) client-ip (?P<true_client_ip>[^"]+)"\]/';
@@ -216,10 +219,21 @@ foreach ($logs as $index => $log) {
         let totalPages = Math.ceil(totalRows / rowsPerPage);
 
         function renderTablePage(page) {
+            // Debug logging
+            console.log(`Rendering page ${page}, visible rows: ${$visibleRows.length}, total pages: ${totalPages}`);
+            
             // Hide all rows first
             $allRows.hide();
+            
             // Show only the slice for current page from visible rows
-            $visibleRows.slice((page - 1) * rowsPerPage, page * rowsPerPage).show();
+            const startIndex = (page - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const rowsToShow = $visibleRows.slice(startIndex, endIndex);
+            
+            console.log(`Showing rows ${startIndex} to ${endIndex - 1} (${rowsToShow.length} rows)`);
+            
+            rowsToShow.show();
+            
             $('#paginationInfo').text(`Page ${page} of ${totalPages} (${$visibleRows.length} total entries)`);
             $('#prevPage').prop('disabled', page === 1);
             $('#nextPage').prop('disabled', page === totalPages);
@@ -265,7 +279,7 @@ foreach ($logs as $index => $log) {
         let currentLogData = null;
 
         function showModal(logIndex) {
-            const log = logsData[logIndex];
+            const log = currentSortedData[logIndex];
             if (!log) return;
 
             // Create a copy and decode HTML entities for display
@@ -296,13 +310,21 @@ foreach ($logs as $index => $log) {
 
             const $modal = $('#rawLogModal');
             if (modalLastPos) {
-                let left = Math.max(0, Math.min(modalLastPos.left, $(window).width() - $modal.outerWidth()));
-                let top = Math.max(0, Math.min(modalLastPos.top, $(window).height() - $modal.outerHeight()));
+                // Account for scroll position when restoring modal position
+                const scrollTop = $(window).scrollTop();
+                const scrollLeft = $(window).scrollLeft();
+                const maxLeft = scrollLeft + $(window).width() - $modal.outerWidth();
+                const maxTop = scrollTop + $(window).height() - $modal.outerHeight();
+                
+                let left = Math.max(scrollLeft, Math.min(modalLastPos.left, maxLeft));
+                let top = Math.max(scrollTop, Math.min(modalLastPos.top, maxTop));
                 $modal.css({ left: left + 'px', top: top + 'px' });
             } else {
                 const win = $(window);
-                const left = (win.width() - $modal.outerWidth()) / 2;
-                const top = (win.height() - $modal.outerHeight()) / 2;
+                const scrollTop = $(window).scrollTop();
+                const scrollLeft = $(window).scrollLeft();
+                const left = scrollLeft + (win.width() - $modal.outerWidth()) / 2;
+                const top = scrollTop + (win.height() - $modal.outerHeight()) / 2;
                 $modal.css({ left: left + 'px', top: top + 'px' });
             }
             $modal.show();
@@ -423,16 +445,28 @@ foreach ($logs as $index => $log) {
             isDragging = true;
             hasDragged = false;
             $(this).css('opacity', '0.8');
-            offsetX = e.clientX - $(this).position().left;
-            offsetY = e.clientY - $(this).position().top;
+            
+            // Use offset() for consistent positioning relative to document
+            const modalOffset = $(this).offset();
+            offsetX = e.pageX - modalOffset.left;
+            offsetY = e.pageY - modalOffset.top;
             
             $(document).on('mousemove.draggable', function(e2) {
                 if (isDragging) {
                     hasDragged = true;
-                    let left = e2.clientX - offsetX;
-                    let top = e2.clientY - offsetY;
-                    left = Math.max(0, Math.min(left, $(window).width() - $('#rawLogModal').outerWidth()));
-                    top = Math.max(0, Math.min(top, $(window).height() - $('#rawLogModal').outerHeight()));
+                    // Use pageX/pageY for consistent positioning relative to document
+                    let left = e2.pageX - offsetX;
+                    let top = e2.pageY - offsetY;
+                    
+                    // Account for scroll position in drag boundaries
+                    const scrollTop = $(window).scrollTop();
+                    const scrollLeft = $(window).scrollLeft();
+                    const maxLeft = scrollLeft + $(window).width() - $('#rawLogModal').outerWidth();
+                    const maxTop = scrollTop + $(window).height() - $('#rawLogModal').outerHeight();
+                    
+                    left = Math.max(scrollLeft, Math.min(left, maxLeft));
+                    top = Math.max(scrollTop, Math.min(top, maxTop));
+                    
                     $('#rawLogModal').css({ left: left + 'px', top: top + 'px', transform: 'none' });
                     modalLastPos = { left: left, top: top };
                 }
@@ -458,66 +492,187 @@ foreach ($logs as $index => $log) {
             }
         });
 
-        // Optimized sorting logic
+        // Data-level sorting system
         let sortOrder = { datetime: 'desc' };
+        let currentSortedData = [...logsData]; // Copy of data that gets sorted
+        let currentSearchData = currentSortedData; // Data after search filtering
+        
+        // Data is already sorted newest first (descending) from PHP
+        console.log('Initial data order - first entry:', currentSortedData[0]?.datetime, 'last entry:', currentSortedData[currentSortedData.length - 1]?.datetime);
+        
+        // Update UI to reflect initial sort state
         $('th[data-col="datetime"] .sort-icon').html('&#8595;');
+        
+        // Reset all other column sort icons to neutral state
+        $('th[data-col]:not([data-col="datetime"]) .sort-icon').html('&#8597;');
+
+        // Helper functions for sorting
+        const isIPv4 = str => /^(\d{1,3}\.){3}\d{1,3}$/.test(str);
+        const ip2num = ip => ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+        
+        function decodeHtmlForSort(html) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = html;
+            return textarea.value;
+        }
+
+        function sortDataByColumn(col, order) {
+            currentSortedData.sort(function(a, b) {
+                let valA, valB;
+
+                // Get values based on column
+                if (col === 'datetime') {
+                    // Parse datetime more reliably by removing timezone and using consistent format
+                    const parseDateTime = (dateStr) => {
+                        // Remove timezone abbreviation (AEDT, AEST, etc.) and parse
+                        const cleanDate = dateStr.replace(/\s+[A-Z]{3,4}$/, '');
+                        const timestamp = new Date(cleanDate).getTime();
+                        console.log(`Parsing "${dateStr}" -> "${cleanDate}" -> ${timestamp}`);
+                        return timestamp;
+                    };
+                    valA = parseDateTime(a.datetime);
+                    valB = parseDateTime(b.datetime);
+                    
+                    // Fallback to string comparison if date parsing fails
+                    if (isNaN(valA) || isNaN(valB)) {
+                        console.warn('Date parsing failed, falling back to string comparison');
+                        valA = a.datetime;
+                        valB = b.datetime;
+                    }
+                } else if (col === 'hostname') {
+                    const hostA = decodeHtmlForSort(a.hostname);
+                    const hostB = decodeHtmlForSort(b.hostname);
+                    if (isIPv4(hostA) && isIPv4(hostB)) {
+                        valA = ip2num(hostA);
+                        valB = ip2num(hostB);
+                    } else {
+                        valA = hostA.toLowerCase();
+                        valB = hostB.toLowerCase();
+                    }
+                } else if (col === 'message') {
+                    valA = decodeHtmlForSort(a.message).toLowerCase();
+                    valB = decodeHtmlForSort(b.message).toLowerCase();
+                } else if (col === 'rule_id') {
+                    const ruleA = decodeHtmlForSort(a.rule_id);
+                    const ruleB = decodeHtmlForSort(b.rule_id);
+                    const numA = parseInt(ruleA);
+                    const numB = parseInt(ruleB);
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        valA = numA;
+                        valB = numB;
+                    } else {
+                        valA = ruleA.toLowerCase();
+                        valB = ruleB.toLowerCase();
+                    }
+                } else if (col === 'client_ip') {
+                    const ipA = decodeHtmlForSort(a.client_ip);
+                    const ipB = decodeHtmlForSort(b.client_ip);
+                    valA = ip2num(ipA);
+                    valB = ip2num(ipB);
+                } else if (col === 'severity') {
+                    valA = decodeHtmlForSort(a.severity).toLowerCase();
+                    valB = decodeHtmlForSort(b.severity).toLowerCase();
+                } else {
+                    valA = a[col];
+                    valB = b[col];
+                }
+
+                if (valA < valB) return order === 'asc' ? -1 : 1;
+                if (valA > valB) return order === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function rebuildTable() {
+            const tbody = $('tbody');
+            tbody.empty();
+            
+            // Get rule color mapping based on current sorted data
+            const ruleIdColorMap = {};
+            const colorPaletteSize = 10;
+            let colorIdx = 0;
+            currentSortedData.forEach(log => {
+                const rid = decodeHtmlForSort(log.rule_id);
+                if (!ruleIdColorMap[rid]) {
+                    ruleIdColorMap[rid] = colorIdx % colorPaletteSize;
+                    colorIdx++;
+                }
+            });
+
+            currentSortedData.forEach((log, index) => {
+                const sev = decodeHtmlForSort(log.severity).toLowerCase();
+                const sevClass = `sev-${sev}`;
+                const ruleId = decodeHtmlForSort(log.rule_id);
+                const colorIdx = ruleIdColorMap[ruleId];
+                const ruleIdClass = `ruleid-color-${colorIdx}`;
+
+                const row = `<tr class='log-row' data-log-index='${index}'>
+                    <td style='width:200px'>${log.datetime}</td>
+                    <td>${log.hostname}</td>
+                    <td>${log.message}</td>
+                    <td class='${ruleIdClass}'>${log.rule_id}</td>
+                    <td>${log.client_ip}</td>
+                    <td class='${sevClass}'>${log.severity}</td>
+                </tr>`;
+                tbody.append(row);
+            });
+
+            // Update row references - this is crucial for pagination to work
+            $allRows = $('tr.log-row');
+            
+            // Rebuild search index with new data order
+            searchIndex = buildSearchIndex(currentSortedData);
+            
+            // Reset pagination and apply current search if active
+            const currentSearchTerm = $('#globalSearch').val();
+            if (currentSearchTerm) {
+                // Reapply search with new sorted data
+                performSearch(currentSearchTerm);
+            } else {
+                // Reset pagination to show all entries
+                $visibleRows = $allRows;
+                totalRows = $allRows.length;
+                totalPages = Math.ceil(totalRows / rowsPerPage);
+                currentPage = 1;
+                renderTablePage(currentPage);
+            }
+        }
 
         $('.sortable').on('click', function(e) {
             if ($(e.target).is('input, input *')) return;
 
             const col = $(this).data('col');
-            const table = $(this).closest('table');
-            const tbody = table.find('tbody');
-            const rows = tbody.find('tr').toArray();
-            const colIdx = $(this).index();
+            
+            // Debug logging
+            console.log(`Sorting by ${col}, current order: ${sortOrder[col] || 'none'}`);
+            
+            // Toggle sort order
+            if (sortOrder[col] === 'asc') {
+                sortOrder[col] = 'desc';
+            } else if (sortOrder[col] === 'desc') {
+                sortOrder[col] = 'asc';
+            } else {
+                // First time sorting this column
+                sortOrder[col] = 'asc';
+            }
 
-            sortOrder[col] = sortOrder[col] === 'asc' ? 'desc' : 'asc';
+            console.log(`New sort order for ${col}: ${sortOrder[col]}`);
 
-            // Cache frequently used functions
-            const isIPv4 = str => /^(\d{1,3}\.){3}\d{1,3}$/.test(str);
-            const ip2num = ip => ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+            // Sort the data
+            sortDataByColumn(col, sortOrder[col]);
+            
+            // Debug logging
+            console.log(`Sorted ${currentSortedData.length} entries by ${col} in ${sortOrder[col]} order`);
+            console.log('After sort - first entry:', currentSortedData[0]?.datetime, 'last entry:', currentSortedData[currentSortedData.length - 1]?.datetime);
+            
+            // Rebuild the table with sorted data
+            rebuildTable();
 
-            rows.sort(function(a, b) {
-                let tdA = $(a).find('td').eq(colIdx).text();
-                let tdB = $(b).find('td').eq(colIdx).text();
-
-                if (col === 'datetime') {
-                    let dateA = Date.parse(tdA);
-                    let dateB = Date.parse(tdB);
-                    if (!isNaN(dateA) && !isNaN(dateB)) {
-                        tdA = dateA;
-                        tdB = dateB;
-                    }
-                } else if (col === 'client_ip') {
-                    tdA = ip2num(tdA);
-                    tdB = ip2num(tdB);
-                } else if (col === 'hostname') {
-                    const aIsIp = isIPv4(tdA);
-                    const bIsIp = isIPv4(tdB);
-                    if (aIsIp && bIsIp) {
-                        tdA = ip2num(tdA);
-                        tdB = ip2num(tdB);
-                    }
-                } else {
-                    let numA = parseFloat(tdA.replace(/[^\d.-]/g, ''));
-                    let numB = parseFloat(tdB.replace(/[^\d.-]/g, ''));
-                    if (!isNaN(numA) && !isNaN(numB)) {
-                        tdA = numA;
-                        tdB = numB;
-                    }
-                }
-
-                if (tdA < tdB) return sortOrder[col] === 'asc' ? -1 : 1;
-                if (tdA > tdB) return sortOrder[col] === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            tbody.empty().append(rows);
+            // Update sort icons
             $('.sort-icon').html('&#8597;');
             $(this).find('.sort-icon').html(sortOrder[col] === 'asc' ? '&#8593;' : '&#8595;');
             
-            // Update pagination after sorting
-            updatePagination();
+            console.log(`Sort complete, now on page ${currentPage} of ${totalPages}`);
         });
 
         // Optimized search functionality with better performance
@@ -526,31 +681,44 @@ foreach ($logs as $index => $log) {
         const $clearSearch = $('#clearGlobalSearch');
         
         // Pre-build search index for better performance
-        const searchIndex = logsData.map((log, index) => {
-            // Decode HTML entities for searching
-            function decodeHtml(html) {
-                const textarea = document.createElement('textarea');
-                textarea.innerHTML = html;
-                return textarea.value;
-            }
-            
-            return {
-                index,
-                text: [
-                    log.datetime,
-                    decodeHtml(log.hostname),
-                    decodeHtml(log.message),
-                    decodeHtml(log.rule_id),
-                    decodeHtml(log.client_ip),
-                    decodeHtml(log.severity)
-                ].join(' ').toLowerCase()
-            };
-        });
+        function buildSearchIndex(dataArray) {
+            return dataArray.map((log, index) => {
+                // Decode HTML entities for searching
+                function decodeHtml(html) {
+                    const textarea = document.createElement('textarea');
+                    textarea.innerHTML = html;
+                    return textarea.value;
+                }
+                
+                return {
+                    index,
+                    text: [
+                        log.datetime,
+                        decodeHtml(log.hostname),
+                        decodeHtml(log.message),
+                        decodeHtml(log.rule_id),
+                        decodeHtml(log.client_ip),
+                        decodeHtml(log.severity)
+                    ].join(' ').toLowerCase()
+                };
+            });
+        }
+        
+        let searchIndex = buildSearchIndex(currentSortedData);
         
         function performSearch(searchTerm) {
             const term = searchTerm.toLowerCase();
             if (term === '') {
+                // Show all rows when search is empty
                 $allRows.show();
+                $clearSearch.hide();
+                
+                // Reset pagination to show all entries
+                $visibleRows = $allRows;
+                totalRows = $allRows.length;
+                totalPages = Math.ceil(totalRows / rowsPerPage);
+                currentPage = 1;
+                renderTablePage(currentPage);
                 return;
             }
             
@@ -563,7 +731,7 @@ foreach ($logs as $index => $log) {
             requestAnimationFrame(() => {
                 const matchingIndices = new Set();
                 
-                // Find matching entries
+                // Find matching entries in current search index
                 searchIndex.forEach(item => {
                     if (item.text.indexOf(term) !== -1) {
                         matchingIndices.add(item.index);
@@ -598,7 +766,7 @@ foreach ($logs as $index => $log) {
             });
         }
         
-        $searchInput.on('input', function() {
+        $searchInput.on('input keyup', function() {
             const val = $(this).val();
             
             clearTimeout(searchTimeout);
