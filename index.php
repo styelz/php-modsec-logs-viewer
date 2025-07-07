@@ -235,8 +235,11 @@ foreach ($logs as $index => $log) {
             rowsToShow.show();
             
             $('#paginationInfo').text(`Page ${page} of ${totalPages} (${$visibleRows.length} total entries)`);
+            $('#firstPage').prop('disabled', page === 1);
             $('#prevPage').prop('disabled', page === 1);
             $('#nextPage').prop('disabled', page === totalPages);
+            $('#lastPage').prop('disabled', page === totalPages);
+            $('#pageInput').val(page);
         }
 
         function updatePagination() {
@@ -246,32 +249,73 @@ foreach ($logs as $index => $log) {
             totalRows = $visibleRows.length;
             totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
             if (currentPage > totalPages) currentPage = totalPages;
+            
+            // Update the total pages display
+            $('#totalPagesSpan').text(totalPages);
+            $('#pageInput').attr('max', totalPages);
+            
             renderTablePage(currentPage);
         }
 
         // Insert pagination controls after the table
         $('table').after(`
-            <div id="paginationControls" style="margin:18px 0; text-align:center;">
-                <button id="prevPage">Prev</button>
-                <span id="paginationInfo"></span>
-                <button id="nextPage">Next</button>
+            <div id="paginationControls" style="margin:18px 0; text-align:center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <button id="firstPage" style="padding: 6px 12px;">First</button>
+                <button id="prevPage" style="padding: 6px 12px;">Prev</button>
+                <span style="display: flex; align-items: center; gap: 5px;">
+                    Page <input type="number" id="pageInput" min="1" style="width: 60px; padding: 4px; text-align: center; background: #2a2a2a; color: #e0e0e0; border: 1px solid #444; border-radius: 3px;"> of <span id="totalPagesSpan"></span>
+                </span>
+                <button id="nextPage" style="padding: 6px 12px;">Next</button>
+                <button id="lastPage" style="padding: 6px 12px;">Last</button>
+                <span id="paginationInfo" style="margin-left: 15px; color: #b0bec5; font-size: 0.9em;"></span>
             </div>
         `);
 
+        $('#firstPage').on('click', function() {
+            if (currentPage !== 1) {
+                currentPage = 1;
+                renderTablePage(currentPage);
+            }
+        });
+        
         $('#prevPage').on('click', function() {
             if (currentPage > 1) {
                 currentPage--;
                 renderTablePage(currentPage);
             }
         });
+        
         $('#nextPage').on('click', function() {
             if (currentPage < totalPages) {
                 currentPage++;
                 renderTablePage(currentPage);
             }
         });
+        
+        $('#lastPage').on('click', function() {
+            if (currentPage !== totalPages) {
+                currentPage = totalPages;
+                renderTablePage(currentPage);
+            }
+        });
+        
+        // Handle direct page input
+        $('#pageInput').on('change keypress', function(e) {
+            if (e.type === 'keypress' && e.which !== 13) return; // Only process on Enter key or change event
+            
+            const inputPage = parseInt($(this).val());
+            if (inputPage && inputPage >= 1 && inputPage <= totalPages && inputPage !== currentPage) {
+                currentPage = inputPage;
+                renderTablePage(currentPage);
+            } else {
+                // Reset to current page if invalid input
+                $(this).val(currentPage);
+            }
+        });
 
         // Initial render
+        $('#totalPagesSpan').text(totalPages);
+        $('#pageInput').attr('max', totalPages);
         renderTablePage(currentPage);
 
         // --- Optimized modal functionality ---
@@ -634,6 +678,8 @@ foreach ($logs as $index => $log) {
                 totalRows = $allRows.length;
                 totalPages = Math.ceil(totalRows / rowsPerPage);
                 currentPage = 1;
+                $('#totalPagesSpan').text(totalPages);
+                $('#pageInput').attr('max', totalPages);
                 renderTablePage(currentPage);
             }
         }
@@ -718,6 +764,8 @@ foreach ($logs as $index => $log) {
                 totalRows = $allRows.length;
                 totalPages = Math.ceil(totalRows / rowsPerPage);
                 currentPage = 1;
+                $('#totalPagesSpan').text(totalPages);
+                $('#pageInput').attr('max', totalPages);
                 renderTablePage(currentPage);
                 return;
             }
@@ -789,6 +837,8 @@ foreach ($logs as $index => $log) {
             totalRows = $allRows.length;
             totalPages = Math.ceil(totalRows / rowsPerPage);
             currentPage = 1;
+            $('#totalPagesSpan').text(totalPages);
+            $('#pageInput').attr('max', totalPages);
             renderTablePage(currentPage);
             
             $searchInput.focus();
