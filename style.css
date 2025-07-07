@@ -74,16 +74,19 @@ tr:hover {
     padding: 0;                    /* Remove padding to control it per section */
     z-index: 10000;
     min-width: 300px;
-    min-height: 100px;
-    max-width: 75vw;
-    max-height: 90vh;
-    overflow: auto;
+    min-height: 200px;
+    max-width: 95vw;
+    max-height: 95vh;
+    width: 600px;                  /* Default width */
+    height: 500px;                 /* Default height */
+    overflow: hidden;              /* Changed from auto to hidden for resize functionality */
     color: #e0e0e0;                /* light text */
     box-shadow: 0 4px 24px #000a;  /* subtle shadow for depth */
     will-change: transform;
     transform: translateZ(0);
-    scrollbar-width: thin;
-    scrollbar-color: #4e524e #232526;
+    resize: both;                  /* Enable native resize */
+    display: flex;
+    flex-direction: column;
 }
 
 /* Draggable area styling */
@@ -92,6 +95,7 @@ tr:hover {
     cursor: move;
     padding: 15px 20px;
     border-bottom: 2px solid #4e524e;
+    flex-shrink: 0;               /* Don't shrink the header */
 }
 
 /* Text selection cursor for modal values and labels */
@@ -277,6 +281,35 @@ tr:hover {
     font-size: 0.9em;
 }
 
+/* Rows per page selector styling */
+.rows-per-page-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #e0e0e0;
+    margin-left: 15px;
+}
+
+.rows-per-page-container label {
+    font-size: 0.9em;
+    color: #b0bec5;
+}
+
+#rowsPerPageSelect {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+#rowsPerPageSelect:focus {
+    border-color: #4e524e;
+    outline: none;
+}
+
 /* Performance optimizations */
 * {
     box-sizing: border-box;
@@ -422,13 +455,14 @@ tbody tr td:first-child {
 
 /* Make modal content more readable */
 #modalRawLogContent {
-    max-height: 70vh;
-    overflow-y: auto;
+    flex: 1;                       /* Take up remaining space */
+    overflow-y: auto;              /* Enable scrolling when content exceeds height */
     padding: 20px;                 /* Move padding here from modal */
     background: #232526;           /* Match main modal background */
     cursor: auto;                  /* Default cursor for content */
     scrollbar-width: thin;
     scrollbar-color: #4e524e #1a1c1d;
+    min-height: 0;                 /* Allow shrinking below content size */
 }
 
 #modalRawLogContent::-webkit-scrollbar {
@@ -589,4 +623,51 @@ tbody tr td:first-child {
     gap: 10px;
     z-index: auto;
     box-shadow: none;
+}
+
+/* Custom resize handle for better visual feedback */
+#rawLogModal::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(-45deg, transparent 30%, #4e524e 30%, #4e524e 35%, transparent 35%, transparent 65%, #4e524e 65%, #4e524e 70%, transparent 70%);
+    cursor: nw-resize;
+    pointer-events: none;
+}
+
+/* Ensure the resize handle is visible */
+#rawLogModal:hover::after {
+    background: linear-gradient(-45deg, transparent 30%, #5e625e 30%, #5e625e 35%, transparent 35%, transparent 65%, #5e625e 65%, #5e625e 70%, transparent 70%);
+}
+
+/* Ensure proper scrollbar styling for resizable modal */
+#rawLogModal::-webkit-scrollbar {
+    width: 12px;
+}
+
+#rawLogModal::-webkit-scrollbar-track {
+    background: #232526;
+    border-radius: 6px;
+}
+
+#rawLogModal::-webkit-scrollbar-thumb {
+    background: #4e524e;
+    border-radius: 6px;
+    border: 2px solid #232526;
+}
+
+#rawLogModal::-webkit-scrollbar-thumb:hover {
+    background: #5e625e;
+}
+
+/* Improve resize cursor visibility */
+#rawLogModal:hover {
+    cursor: move;
+}
+
+#rawLogModal:hover::after {
+    opacity: 1;
 }

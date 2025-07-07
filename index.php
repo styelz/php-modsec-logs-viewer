@@ -221,7 +221,7 @@ foreach ($logs as $index => $log) {
         let modalLastPos = null;
 
         // --- Pagination variables ---
-        const rowsPerPage = 25;
+        let rowsPerPage = 100; // Increased from 25 to 100
         let currentPage = 1;
         let $allRows = $('tr.log-row');
         let $visibleRows = $allRows; // Track currently visible rows
@@ -275,6 +275,16 @@ foreach ($logs as $index => $log) {
             </span>
             <button id="nextPage">Next</button>
             <button id="lastPage">Last</button>
+            <span class="rows-per-page-container">
+                <label for="rowsPerPageSelect">Rows:</label>
+                <select id="rowsPerPageSelect">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100" selected>100</option>
+                    <option value="200">200</option>
+                    <option value="500">500</option>
+                </select>
+            </span>
             <span id="paginationInfo" class="pagination-info"></span>
         `);
 
@@ -318,6 +328,16 @@ foreach ($logs as $index => $log) {
                 // Reset to current page if invalid input
                 $(this).val(currentPage);
             }
+        });
+
+        // Handle rows per page change
+        $('#rowsPerPageSelect').on('change', function() {
+            rowsPerPage = parseInt($(this).val());
+            // Recalculate pagination
+            totalPages = Math.ceil($visibleRows.length / rowsPerPage);
+            currentPage = 1; // Reset to first page
+            $('#pageInput').attr('max', totalPages);
+            renderTablePage(currentPage);
         });
 
         // Initial render
@@ -370,12 +390,18 @@ foreach ($logs as $index => $log) {
                 let top = Math.max(scrollTop, Math.min(modalLastPos.top, maxTop));
                 $modal.css({ left: left + 'px', top: top + 'px' });
             } else {
+                // Center the modal with default size
                 const win = $(window);
                 const scrollTop = $(window).scrollTop();
                 const scrollLeft = $(window).scrollLeft();
                 const left = scrollLeft + (win.width() - $modal.outerWidth()) / 2;
                 const top = scrollTop + (win.height() - $modal.outerHeight()) / 2;
-                $modal.css({ left: left + 'px', top: top + 'px' });
+                $modal.css({ 
+                    left: left + 'px', 
+                    top: top + 'px',
+                    width: '600px',
+                    height: '500px'
+                });
             }
             $modal.show();
             $('body').css('overflow', 'hidden'); // Disable page scrolling when modal is open
@@ -480,15 +506,37 @@ foreach ($logs as $index => $log) {
             displayModalContent();
         });
 
-        // Draggable modal (updated to allow text selection and prevent close on drag)
+        // Draggable modal (updated to allow text selection, prevent close on drag, and handle resizing)
         let isDragging = false, offsetX = 0, offsetY = 0, hasDragged = false;
+        let isResizing = false, initialSize = null;
+        let scrollPosition = null;
         
         $('#rawLogModal').on('mousedown', function(e) {
-            // Don't start dragging if clicking on the close button or text content
+            // Don't start dragging if clicking on the close button, text content, or resize area
             if (e.target.id === 'closeModalBtn' || 
                 $(e.target).closest('#modalRawLogContent').length > 0 ||
                 $(e.target).hasClass('modal-value') ||
                 $(e.target).hasClass('modal-label')) {
+                return;
+            }
+            
+            // Check if clicking near the bottom-right corner (resize area)
+            const rect = this.getBoundingClientRect();
+            const isNearBottomRight = (e.clientX > rect.right - 20) && (e.clientY > rect.bottom - 20);
+            
+            if (isNearBottomRight) {
+                // Track that we're starting a resize operation
+                isResizing = true;
+                initialSize = { width: rect.width, height: rect.height };
+                
+                // Store current scroll position to prevent unwanted scrolling
+                const $content = $('#modalRawLogContent');
+                scrollPosition = $content.scrollTop();
+                
+                // Prevent scrolling during resize by temporarily disabling it
+                $content.css('overflow-y', 'hidden');
+                
+                // Let the browser handle resizing
                 return;
             }
             
@@ -533,10 +581,38 @@ foreach ($logs as $index => $log) {
                 }
             });
         });
+        
+        // Track resize operations to prevent modal closing and content scrolling
+        $(document).on('mouseup', function() {
+            if (isResizing) {
+                const currentRect = document.getElementById('rawLogModal').getBoundingClientRect();
+                const hasResized = initialSize && (
+                    Math.abs(currentRect.width - initialSize.width) > 5 || 
+                    Math.abs(currentRect.height - initialSize.height) > 5
+                );
+                
+                // Re-enable scrolling and restore scroll position
+                const $content = $('#modalRawLogContent');
+                $content.css('overflow-y', 'auto');
+                
+                if (scrollPosition !== null) {
+                    $content.scrollTop(scrollPosition);
+                    scrollPosition = null;
+                }
+                
+                if (hasResized) {
+                    // Prevent modal closing for a short time after resize
+                    setTimeout(() => { isResizing = false; }, 150);
+                } else {
+                    isResizing = false;
+                }
+                initialSize = null;
+            }
+        });
 
-        // Close modal when clicking outside of it (but not after dragging)
+        // Close modal when clicking outside of it (but not after dragging or resizing)
         $('#rawLogModal').on('click', function(e) {
-            if (e.target.id === 'rawLogModal' && !hasDragged) {
+            if (e.target.id === 'rawLogModal' && !hasDragged && !isResizing) {
                 $('#rawLogModal').hide();
                 $('body').css('overflow', ''); // Re-enable page scrolling
             }
