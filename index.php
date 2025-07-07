@@ -129,32 +129,35 @@ foreach ($logs as $log) {
 </head>
 <body>
     <div class="container">
-        <div class="header-container">
-            <h1>ModSecurity Logs Viewer</h1>
-            <div class="status-indicator" style="color: #b0bec5; font-size: 0.9em; text-align: center;">
-                Showing <?php echo count($logs); ?> most recent entries
-                <?php if ($maxLogs < 2000): ?>
-                    (limited to <?php echo $maxLogs; ?> for performance)
-                <?php endif; ?>
-            </div>
-            <div class="search-container">
-                <input type="text" id="globalSearch" placeholder="Search all columns..." style="padding: 8px 12px; width: 400px; background: #232526; color: #e0e0e0; border: 1px solid #444; border-radius: 4px; font-size: 1em;">
-                <span id="clearGlobalSearch" style="display: none; cursor: pointer; color: #aaa; font-size: 1.2em;">&#10005;</span>
+        <div class="header-section">
+            <div class="header-container">
+                <h1>ModSecurity Logs Viewer</h1>
+                <div class="status-indicator" style="color: #b0bec5; font-size: 0.9em; text-align: center;">
+                    Showing <?php echo count($logs); ?> most recent entries
+                    <?php if ($maxLogs < 2000): ?>
+                        (limited to <?php echo $maxLogs; ?> for performance)
+                    <?php endif; ?>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="globalSearch" placeholder="Search all columns..." style="padding: 8px 12px; width: 400px; background: #232526; color: #e0e0e0; border: 1px solid #444; border-radius: 4px; font-size: 1em;">
+                    <span id="clearGlobalSearch" style="display: none; cursor: pointer; color: #aaa; font-size: 1.2em;">&#10005;</span>
+                </div>
             </div>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th data-col="datetime" class="sortable">Date <span class="sort-icon">&#8595;</span></th>
-                    <th data-col="hostname" class="sortable">Target <span class="sort-icon">&#8597;</span></th>
-                    <th data-col="message" class="sortable">Message <span class="sort-icon">&#8597;</span></th>
-                    <th data-col="rule_id" class="sortable">Rule ID <span class="sort-icon">&#8597;</span></th>
-                    <th data-col="client_ip" class="sortable">Source IP <span class="sort-icon">&#8597;</span></th>
-                    <th data-col="severity" class="sortable">Severity <span class="sort-icon">&#8597;</span></th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-col="datetime" class="sortable">Date <span class="sort-icon">&#8595;</span></th>
+                        <th data-col="hostname" class="sortable">Target <span class="sort-icon">&#8597;</span></th>
+                        <th data-col="message" class="sortable">Message <span class="sort-icon">&#8597;</span></th>
+                        <th data-col="rule_id" class="sortable">Rule ID <span class="sort-icon">&#8597;</span></th>
+                        <th data-col="client_ip" class="sortable">Source IP <span class="sort-icon">&#8597;</span></th>
+                        <th data-col="severity" class="sortable">Severity <span class="sort-icon">&#8597;</span></th>
+                    </tr>
+                </thead>
+                <tbody>
 <?php
 foreach ($logs as $index => $log) {
     // Map severity to color class
@@ -179,6 +182,13 @@ foreach ($logs as $index => $log) {
 ?>
 </tbody>
             </table>
+        </div>
+
+        <div class="pagination-section">
+            <div id="paginationControls">
+                <!-- Pagination controls will be inserted here by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <!-- Modal structure -->
@@ -250,25 +260,22 @@ foreach ($logs as $index => $log) {
             totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
             if (currentPage > totalPages) currentPage = totalPages;
             
-            // Update the total pages display
-            $('#totalPagesSpan').text(totalPages);
+            // Update the max attribute for the input
             $('#pageInput').attr('max', totalPages);
             
             renderTablePage(currentPage);
         }
 
-        // Insert pagination controls after the table
-        $('table').after(`
-            <div id="paginationControls" style="margin:18px 0; text-align:center; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <button id="firstPage" style="padding: 6px 12px;">First</button>
-                <button id="prevPage" style="padding: 6px 12px;">Prev</button>
-                <span style="display: flex; align-items: center; gap: 5px;">
-                    Page <input type="number" id="pageInput" min="1" style="width: 60px; padding: 4px; text-align: center; background: #2a2a2a; color: #e0e0e0; border: 1px solid #444; border-radius: 3px;"> of <span id="totalPagesSpan"></span>
-                </span>
-                <button id="nextPage" style="padding: 6px 12px;">Next</button>
-                <button id="lastPage" style="padding: 6px 12px;">Last</button>
-                <span id="paginationInfo" style="margin-left: 15px; color: #b0bec5; font-size: 0.9em;"></span>
-            </div>
+        // Insert pagination controls into the designated container
+        $('#paginationControls').html(`
+            <button id="firstPage">First</button>
+            <button id="prevPage">Prev</button>
+            <span class="page-info">
+                <input type="number" id="pageInput" min="1">
+            </span>
+            <button id="nextPage">Next</button>
+            <button id="lastPage">Last</button>
+            <span id="paginationInfo" class="pagination-info"></span>
         `);
 
         $('#firstPage').on('click', function() {
@@ -314,7 +321,6 @@ foreach ($logs as $index => $log) {
         });
 
         // Initial render
-        $('#totalPagesSpan').text(totalPages);
         $('#pageInput').attr('max', totalPages);
         renderTablePage(currentPage);
 
@@ -678,7 +684,6 @@ foreach ($logs as $index => $log) {
                 totalRows = $allRows.length;
                 totalPages = Math.ceil(totalRows / rowsPerPage);
                 currentPage = 1;
-                $('#totalPagesSpan').text(totalPages);
                 $('#pageInput').attr('max', totalPages);
                 renderTablePage(currentPage);
             }
@@ -837,7 +842,6 @@ foreach ($logs as $index => $log) {
             totalRows = $allRows.length;
             totalPages = Math.ceil(totalRows / rowsPerPage);
             currentPage = 1;
-            $('#totalPagesSpan').text(totalPages);
             $('#pageInput').attr('max', totalPages);
             renderTablePage(currentPage);
             

@@ -3,8 +3,10 @@ body {
     background-color: #181a1b;
     color: #e0e0e0;
     margin: 0;
-    padding: 0px 20px;
+    padding: 0;
     transform: translateZ(0);
+    height: 100vh;
+    overflow: hidden;
 }
 
 h1 {
@@ -14,7 +16,7 @@ h1 {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin: 0;
     background-color: #232526;
     color: #e0e0e0;
     transform: translateZ(0);
@@ -70,7 +72,7 @@ tr:hover {
     background: #232526;           /* dark background */
     border: 3px solid #4e524e;     /* green border for contrast */
     padding: 0;                    /* Remove padding to control it per section */
-    z-index: 1000;
+    z-index: 10000;
     min-width: 300px;
     min-height: 100px;
     max-width: 75vw;
@@ -223,21 +225,56 @@ tr:hover {
 .ruleid-color-9 { color: #ffecb3; }
 
 #paginationControls {
-    margin: 18px 0;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #1a1a1a;
+    border-top: 1px solid #444;
+    padding: 12px 0;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 999;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
 }
 #paginationControls button {
-    background: #263238;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 6px 14px;
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 6px 12px;
     border-radius: 3px;
     cursor: pointer;
-    margin: 0 8px;
+    margin: 0;
 }
 #paginationControls button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+#paginationControls input[type="number"] {
+    width: 60px;
+    padding: 4px;
+    text-align: center;
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 3px;
+}
+
+#paginationControls .page-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #e0e0e0;
+}
+
+#paginationControls .pagination-info {
+    margin-left: 15px;
+    color: #b0bec5;
+    font-size: 0.9em;
 }
 
 /* Performance optimizations */
@@ -266,7 +303,7 @@ body {
     padding: 20px;
     border-radius: 8px;
     border: 2px solid #4e524e;
-    z-index: 2000;
+    z-index: 5000;
     display: none;
 }
 
@@ -482,4 +519,74 @@ tbody tr td:first-child {
 
 #closeModalBtn:hover {
     background: #455a64 !important;
+}
+
+/* Container layout for modal-like structure */
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.header-section {
+    flex-shrink: 0;
+    padding: 20px 0 10px 0;
+}
+
+.table-container {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    background-color: #232526;
+    border: 1px solid #333;
+    border-radius: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #4e524e #232526;
+}
+
+.table-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #232526;
+    border-radius: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #4e524e;
+    border-radius: 6px;
+    border: 2px solid #232526;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #5e625e;
+}
+
+.pagination-section {
+    flex-shrink: 0;
+    background: #1a1a1a;
+    border-top: 1px solid #444;
+    padding: 12px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+
+/* Update pagination controls to work within the new layout */
+#paginationControls {
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    background: transparent;
+    border-top: none;
+    padding: 0;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: auto;
+    box-shadow: none;
 }
