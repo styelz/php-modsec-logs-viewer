@@ -4,6 +4,7 @@ body {
     color: #e0e0e0;
     margin: 0;
     padding: 0px 20px;
+    transform: translateZ(0);
 }
 
 h1 {
@@ -16,6 +17,8 @@ table {
     margin-top: 20px;
     background-color: #232526;
     color: #e0e0e0;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 th, td {
@@ -57,18 +60,7 @@ tr:hover {
     color: #e0e0e0;
 }
 
-#closeModalBtn {
-    float: right;
-    background: #263238;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 6px 14px;
-    border-radius: 3px;
-    cursor: pointer;
-}
-#closeModalBtn:hover {
-    background: #37474f;
-}
+
 
 #rawLogModal {
     cursor: move;
@@ -77,7 +69,7 @@ tr:hover {
     left: 30%;
     background: #232526;           /* dark background */
     border: 3px solid #4e524e;     /* green border for contrast */
-    padding: 20px;
+    padding: 0;                    /* Remove padding to control it per section */
     z-index: 1000;
     min-width: 300px;
     min-height: 100px;
@@ -86,6 +78,47 @@ tr:hover {
     overflow: auto;
     color: #e0e0e0;                /* light text */
     box-shadow: 0 4px 24px #000a;  /* subtle shadow for depth */
+    will-change: transform;
+    transform: translateZ(0);
+    scrollbar-width: thin;
+    scrollbar-color: #4e524e #232526;
+}
+
+/* Draggable area styling */
+#rawLogModal .modal-header {
+    background: #1a1c1d;          /* Slightly darker for draggable area */
+    cursor: move;
+    padding: 15px 20px;
+    border-bottom: 2px solid #4e524e;
+}
+
+/* Text selection cursor for modal values and labels */
+.modal-value, .modal-label {
+    cursor: text !important;
+}
+
+/* Ensure buttons have pointer cursor */
+#toggleViewBtn, #closeModalBtn {
+    cursor: pointer !important;
+}
+
+#rawLogModal::-webkit-scrollbar {
+    width: 12px;
+}
+
+#rawLogModal::-webkit-scrollbar-track {
+    background: #232526;
+    border-radius: 6px;
+}
+
+#rawLogModal::-webkit-scrollbar-thumb {
+    background: #4e524e;
+    border-radius: 6px;
+    border: 2px solid #232526;
+}
+
+#rawLogModal::-webkit-scrollbar-thumb:hover {
+    background: #5e625e;
 }
 
 #rawLogModal pre {
@@ -96,6 +129,32 @@ tr:hover {
     font-size: 1em;
     max-width: 100%;
     overflow-x: auto;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    cursor: text;
+    scrollbar-width: thin;
+    scrollbar-color: #4e524e #181a1b;
+}
+
+#rawLogModal pre::-webkit-scrollbar {
+    height: 8px;
+}
+
+#rawLogModal pre::-webkit-scrollbar-track {
+    background: #181a1b;
+    border-radius: 4px;
+}
+
+#rawLogModal pre::-webkit-scrollbar-thumb {
+    background: #4e524e;
+    border-radius: 4px;
+    border: 1px solid #181a1b;
+}
+
+#rawLogModal pre::-webkit-scrollbar-thumb:hover {
+    background: #5e625e;
 }
 
 .sort-icon {
@@ -179,4 +238,248 @@ tr:hover {
 #paginationControls button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Performance optimizations */
+* {
+    box-sizing: border-box;
+}
+
+/* Optimize table rendering */
+tr.log-row {
+    contain: layout;
+}
+
+/* Improve scrolling performance */
+body {
+    transform: translateZ(0);
+}
+
+/* Loading indicator */
+#loadingIndicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #232526;
+    color: #e0e0e0;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #4e524e;
+    z-index: 2000;
+    display: none;
+}
+
+.spinner {
+    border: 3px solid #333;
+    border-top: 3px solid #4e524e;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Search input improvements */
+#globalSearch {
+    transition: border-color 0.2s ease;
+}
+
+#globalSearch:focus {
+    border-color: #4e524e;
+    outline: none;
+}
+
+/* Date column specific styling */
+td[style*="width:200px"] {
+    white-space: nowrap;
+    min-width: 200px;
+}
+
+/* Alternative approach - target first column (date) */
+tbody tr td:first-child {
+    white-space: nowrap;
+    min-width: 200px;
+}
+
+/* Header layout - put title, status, and search on same line */
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-container h1 {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.status-indicator {
+    flex: 1;
+    text-align: center;
+    min-width: 200px;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Modal formatting styles */
+.modal-section {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 15px;
+}
+
+.modal-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.modal-section-title {
+    color: #4e524e;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+.modal-field {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    word-wrap: break-word;
+}
+
+.modal-label {
+    color: #b0bec5;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-bottom: 2px;
+}
+
+.modal-value {
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    background: #1a1c1d;
+    padding: 4px 8px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Make modal content more readable */
+#modalRawLogContent {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 20px;                 /* Move padding here from modal */
+    background: #232526;           /* Match main modal background */
+    cursor: auto;                  /* Default cursor for content */
+    scrollbar-width: thin;
+    scrollbar-color: #4e524e #1a1c1d;
+}
+
+#modalRawLogContent::-webkit-scrollbar {
+    width: 8px;
+}
+
+#modalRawLogContent::-webkit-scrollbar-track {
+    background: #1a1c1d;
+    border-radius: 4px;
+}
+
+#modalRawLogContent::-webkit-scrollbar-thumb {
+    background: #4e524e;
+    border-radius: 4px;
+    border: 1px solid #1a1c1d;
+}
+
+#modalRawLogContent::-webkit-scrollbar-thumb:hover {
+    background: #5e625e;
+}
+
+/* Dark theme scrollbar for pre elements in modal */
+#rawLogModal pre {
+    scrollbar-width: thin;
+    scrollbar-color: #4e524e #181a1b;
+}
+
+#rawLogModal pre::-webkit-scrollbar {
+    height: 8px;
+}
+
+#rawLogModal pre::-webkit-scrollbar-track {
+    background: #181a1b;
+    border-radius: 4px;
+}
+
+#rawLogModal pre::-webkit-scrollbar-thumb {
+    background: #4e524e;
+    border-radius: 4px;
+    border: 1px solid #181a1b;
+}
+
+#rawLogModal pre::-webkit-scrollbar-thumb:hover {
+    background: #5e625e;
+}
+
+/* Modal header styling - updated for draggable area */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;              /* Remove margin since we control spacing with padding */
+    padding: 0;                    /* Padding handled by parent selector */
+    border-bottom: none;           /* Border handled by parent selector */
+    background: transparent;       /* Background handled by parent selector */
+}
+
+#toggleViewBtn {
+    background: #37474f !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 0.85em !important;
+    font-family: Arial, sans-serif !important;
+    transition: background-color 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+
+#toggleViewBtn:hover {
+    background: #455a64 !important;
+}
+
+#closeModalBtn {
+    background: #37474f !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 0.85em !important;
+    font-family: Arial, sans-serif !important;
+    transition: background-color 0.2s ease !important;
+    box-sizing: border-box !important;
+    float: none !important;
+}
+
+#closeModalBtn:hover {
+    background: #455a64 !important;
 }

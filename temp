@@ -395,6 +395,14 @@ foreach ($logs as $index => $log) {
             $('body').css('overflow', ''); // Re-enable page scrolling
         });
 
+        // Close modal when clicking outside of it
+        $(document).on('click', function(e) {
+            if (e.target.id === 'rawLogModal') {
+                $('#rawLogModal').hide();
+                $('body').css('overflow', ''); // Re-enable page scrolling
+            }
+        });
+
         // Close modal with Escape key
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape' && $('#rawLogModal').is(':visible')) {
@@ -408,9 +416,8 @@ foreach ($logs as $index => $log) {
             displayModalContent();
         });
 
-        // Draggable modal (updated to allow text selection and prevent close on drag)
-        let isDragging = false, offsetX = 0, offsetY = 0, hasDragged = false;
-        
+        // Draggable modal (updated to allow text selection)
+        let isDragging = false, offsetX = 0, offsetY = 0;
         $('#rawLogModal').on('mousedown', function(e) {
             // Don't start dragging if clicking on the close button or text content
             if (e.target.id === 'closeModalBtn' || 
@@ -421,14 +428,11 @@ foreach ($logs as $index => $log) {
             }
             
             isDragging = true;
-            hasDragged = false;
             $(this).css('opacity', '0.8');
             offsetX = e.clientX - $(this).position().left;
             offsetY = e.clientY - $(this).position().top;
-            
             $(document).on('mousemove.draggable', function(e2) {
                 if (isDragging) {
-                    hasDragged = true;
                     let left = e2.clientX - offsetX;
                     let top = e2.clientY - offsetY;
                     left = Math.max(0, Math.min(left, $(window).width() - $('#rawLogModal').outerWidth()));
@@ -437,25 +441,11 @@ foreach ($logs as $index => $log) {
                     modalLastPos = { left: left, top: top };
                 }
             });
-            
             $(document).on('mouseup.draggable', function() {
                 isDragging = false;
                 $('#rawLogModal').css('opacity', '1');
                 $(document).off('.draggable');
-                
-                // Prevent click event from firing immediately after drag
-                if (hasDragged) {
-                    setTimeout(() => { hasDragged = false; }, 100);
-                }
             });
-        });
-
-        // Close modal when clicking outside of it (but not after dragging)
-        $('#rawLogModal').on('click', function(e) {
-            if (e.target.id === 'rawLogModal' && !hasDragged) {
-                $('#rawLogModal').hide();
-                $('body').css('overflow', ''); // Re-enable page scrolling
-            }
         });
 
         // Optimized sorting logic
