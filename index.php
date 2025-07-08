@@ -8,7 +8,8 @@ $filename = '/var/www/html/modsec-logs/modsec.log';
 // Add cache headers for better performance
 $cacheTime = 300; // 5 minutes
 $lastModified = file_exists($filename) ? filemtime($filename) : time();
-$etag = md5($lastModified . filesize($filename));
+$fileSize = file_exists($filename) ? filesize($filename) : 0;
+$etag = md5($lastModified . $fileSize);
 
 header('Cache-Control: public, max-age=' . $cacheTime);
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
@@ -219,6 +220,7 @@ foreach ($logs as $index => $log) {
         console.log(`Page loaded in ${loadTime.toFixed(2)}ms with ${logsData.length} log entries`);
         
         let modalLastPos = null;
+        let modalInitialized = false; // Track if modal has been displayed before
 
         // --- Pagination variables ---
         let rowsPerPage = 100; // Increased from 25 to 100
@@ -352,35 +354,14 @@ foreach ($logs as $index => $log) {
             const log = currentSortedData[logIndex];
             if (!log) return;
 
-            // Create a copy and decode HTML entities for display
-            const logCopy = {};
-            for (const [key, value] of Object.entries(log)) {
-                if (typeof value === 'string') {
-                    // Decode HTML entities for display in modal
-                    const textarea = document.createElement('textarea');
-                    textarea.innerHTML = value;
-                    logCopy[key] = textarea.value;
-                } else if (Array.isArray(value)) {
-                    // Handle arrays (like tags)
-                    logCopy[key] = value.map(item => {
-                        if (typeof item === 'string') {
-                            const textarea = document.createElement('textarea');
-                            textarea.innerHTML = item;
-                            return textarea.value;
-                        }
-                        return item;
-                    });
-                } else {
-                    logCopy[key] = value;
-                }
-            }
-            
-            currentLogData = logCopy;
+            // Create a copy but DO NOT decode HTML entities to prevent XSS
+            // Keep the data as-is with HTML entities encoded for security
+            currentLogData = { ...log };
             displayModalContent();
 
             const $modal = $('#rawLogModal');
             if (modalLastPos) {
-                // Account for scroll position when restoring modal position
+                // Restore previous position and size - user has already positioned/resized modal
                 const scrollTop = $(window).scrollTop();
                 const scrollLeft = $(window).scrollLeft();
                 const maxLeft = scrollLeft + $(window).width() - $modal.outerWidth();
@@ -389,19 +370,44 @@ foreach ($logs as $index => $log) {
                 let left = Math.max(scrollLeft, Math.min(modalLastPos.left, maxLeft));
                 let top = Math.max(scrollTop, Math.min(modalLastPos.top, maxTop));
                 $modal.css({ left: left + 'px', top: top + 'px' });
+            } else if (!modalInitialized) {
+                // Only set responsive size on the very first display
+                const win = $(window);
+                const scrollTop = $(window).scrollTop();
+                const scrollLeft = $(window).scrollLeft();
+                
+                // Calculate responsive size with some padding from window edges
+                const padding = 40; // 40px padding from each edge
+                const maxWidth = win.width() - (padding * 2);
+                const maxHeight = win.height() - (padding * 2);
+                
+                // Set preferred size but constrain to window size
+                const preferredWidth = 900;
+                const preferredHeight = 700;
+                const modalWidth = Math.min(preferredWidth, maxWidth);
+                const modalHeight = Math.min(preferredHeight, maxHeight);
+                
+                // Center the modal in the viewport
+                const left = scrollLeft + (win.width() - modalWidth) / 2;
+                const top = scrollTop + (win.height() - modalHeight) / 2;
+                
+                $modal.css({ 
+                    left: left + 'px', 
+                    top: top + 'px',
+                    width: modalWidth + 'px',
+                    height: modalHeight + 'px'
+                });
+                
+                // Mark modal as initialized
+                modalInitialized = true;
             } else {
-                // Center the modal with default size
+                // Modal has been displayed before but no saved position - just center it
                 const win = $(window);
                 const scrollTop = $(window).scrollTop();
                 const scrollLeft = $(window).scrollLeft();
                 const left = scrollLeft + (win.width() - $modal.outerWidth()) / 2;
                 const top = scrollTop + (win.height() - $modal.outerHeight()) / 2;
-                $modal.css({ 
-                    left: left + 'px', 
-                    top: top + 'px',
-                    width: '600px',
-                    height: '500px'
-                });
+                $modal.css({ left: left + 'px', top: top + 'px' });
             }
             $modal.show();
             $('body').css('overflow', 'hidden'); // Disable page scrolling when modal is open
@@ -414,13 +420,48 @@ foreach ($logs as $index => $log) {
                 $('#modalRawLogContent').html(formatLogEntry(currentLogData));
                 $('#toggleViewBtn').text('Raw JSON');
             } else {
-                const rawLog = JSON.stringify(currentLogData, null, 2);
-                $('#modalRawLogContent').html(`<pre style="margin: 0; color: #e0e0e0; background: #181a1b; padding: 10px; border-radius: 4px; font-size: 1em; white-space: pre-wrap; word-break: break-all;">${rawLog}</pre>`);
+                // Create a decoded version of the log data for JSON display
+                const decodedLogData = {};
+                Object.keys(currentLogData).forEach(key => {
+                    if (Array.isArray(currentLogData[key])) {
+                        // Handle arrays (like tags)
+                        decodedLogData[key] = currentLogData[key].map(item => 
+                            typeof item === 'string' ? decodeHtmlEntities(item) : item
+                        );
+                    } else if (typeof currentLogData[key] === 'string') {
+                        // Decode HTML entities for string values
+                        decodedLogData[key] = decodeHtmlEntities(currentLogData[key]);
+                    } else {
+                        // Keep numbers and other types as-is
+                        decodedLogData[key] = currentLogData[key];
+                    }
+                });
+                
+                const rawLog = JSON.stringify(decodedLogData, null, 2);
+                // Use text() instead of html() to prevent XSS execution
+                $('#modalRawLogContent').empty().append($('<pre>').css({
+                    'margin': '0',
+                    'color': '#e0e0e0',
+                    'background': '#181a1b',
+                    'padding': '10px',
+                    'border-radius': '4px',
+                    'font-size': '1em',
+                    'white-space': 'pre-wrap',
+                    'word-break': 'break-all'
+                }).text(rawLog));
                 $('#toggleViewBtn').text('Formatted');
             }
         }
         
-        // Create formatted display instead of raw JSON
+        // Helper function to safely decode HTML entities for display
+        function decodeHtmlEntities(str) {
+            if (typeof str !== 'string') return str;
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = str;
+            return textarea.value;
+        }
+
+        // Create formatted display instead of raw JSON - XSS SAFE VERSION with readable HTML entities
         const formatLogEntry = (log) => {
             const sections = [
                 {
@@ -461,25 +502,46 @@ foreach ($logs as $index => $log) {
                 }
             ];
 
-            let html = '';
+            // Create DOM elements safely to prevent XSS
+            const $container = $('<div>');
+            
             sections.forEach(section => {
-                html += `<div class="modal-section">`;
-                html += `<h3 class="modal-section-title">${section.title}</h3>`;
+                const $section = $('<div>').addClass('modal-section');
+                const $title = $('<h3>').addClass('modal-section-title').text(section.title);
+                $section.append($title);
+                
                 section.fields.forEach(field => {
                     if (field.value && field.value !== '') {
-                        const displayValue = field.label === 'Data' && field.value.length > 100 
-                            ? field.value.substring(0, 100) + '...\n' + field.value 
-                            : field.value;
-                        html += `<div class="modal-field">`;
-                        html += `<span class="modal-label">${field.label}:</span>`;
-                        html += `<span class="modal-value">${displayValue}</span>`;
-                        html += `</div>`;
+                        const $field = $('<div>').addClass('modal-field');
+                        const $label = $('<span>').addClass('modal-label').text(field.label + ':');
+                        
+                        let displayValue = field.value;
+                        
+                        // Decode HTML entities for readable display while maintaining security
+                        if (typeof displayValue === 'string') {
+                            displayValue = decodeHtmlEntities(displayValue);
+                        } else if (Array.isArray(displayValue)) {
+                            displayValue = displayValue.map(item => 
+                                typeof item === 'string' ? decodeHtmlEntities(item) : item
+                            ).join(', ');
+                        }
+                        
+                        if (field.label === 'Data' && typeof displayValue === 'string' && displayValue.length > 100) {
+                            displayValue = displayValue.substring(0, 100) + '...\n' + displayValue;
+                        }
+                        
+                        // Use .text() to safely display the decoded content without XSS risk
+                        const $value = $('<span>').addClass('modal-value').text(displayValue);
+                        
+                        $field.append($label).append($value);
+                        $section.append($field);
                     }
                 });
-                html += `</div>`;
+                
+                $container.append($section);
             });
 
-            return html;
+            return $container.html();
         };
 
         // Use event delegation for better performance
@@ -529,6 +591,9 @@ foreach ($logs as $index => $log) {
                 isResizing = true;
                 initialSize = { width: rect.width, height: rect.height };
                 
+                // Prevent text selection during resize
+                $('body').addClass('no-select resizing-modal');
+                
                 // Store current scroll position to prevent unwanted scrolling
                 const $content = $('#modalRawLogContent');
                 scrollPosition = $content.scrollTop();
@@ -543,6 +608,9 @@ foreach ($logs as $index => $log) {
             isDragging = true;
             hasDragged = false;
             $(this).css('opacity', '0.8');
+            
+            // Prevent text selection during drag
+            $('body').addClass('no-select dragging-modal');
             
             // Use offset() for consistent positioning relative to document
             const modalOffset = $(this).offset();
@@ -575,6 +643,9 @@ foreach ($logs as $index => $log) {
                 $('#rawLogModal').css('opacity', '1');
                 $(document).off('.draggable');
                 
+                // Re-enable text selection after drag
+                $('body').removeClass('no-select dragging-modal');
+                
                 // Prevent click event from firing immediately after drag
                 if (hasDragged) {
                     setTimeout(() => { hasDragged = false; }, 100);
@@ -590,6 +661,9 @@ foreach ($logs as $index => $log) {
                     Math.abs(currentRect.width - initialSize.width) > 5 || 
                     Math.abs(currentRect.height - initialSize.height) > 5
                 );
+                
+                // Re-enable text selection after resize
+                $('body').removeClass('no-select resizing-modal');
                 
                 // Re-enable scrolling and restore scroll position
                 const $content = $('#modalRawLogContent');

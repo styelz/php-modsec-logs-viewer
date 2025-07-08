@@ -125,6 +125,58 @@ Understanding these logs is crucial for:
 - Compliance and audit requirements
 - Incident response and forensics
 
+## Changelog
+
+### Version 2.1 (Latest)
+**Enhanced Modal Experience and Display Improvements**
+
+#### 🖼️ **Modal Enhancements**
+- **Improved initial sizing**: Modal now intelligently fits window with 40px padding on first display
+- **Size persistence**: User's custom modal size and position preserved across sessions
+- **Smart initialization**: Responsive sizing only applied on first load, respects user preferences thereafter
+- **Enhanced text selection**: Prevents unwanted highlighting during modal drag and resize operations
+- **Better HTML entity handling**: Both formatted and raw JSON views now properly decode entities (e.g., `&lt;script&gt;` → `<script>`)
+
+#### 🔧 **Technical Improvements**
+- **Optimized modal positioning**: Better boundary detection and viewport awareness
+- **Improved drag/resize UX**: Visual cursor feedback and smooth interaction states
+- **Enhanced JSON display**: Raw JSON view shows properly decoded data for better readability
+- **Cross-browser compatibility**: Improved support for text selection prevention
+
+### Version 2.0
+**Major UI/UX and Security Improvements**
+
+#### 🎨 **Layout & Interface**
+- **Fixed pagination bar**: Always visible at bottom in modal-like layout using flexbox
+- **Rows per page selector**: Dropdown with options for 25/50/100/200/500 rows (default: 100)
+- **Responsive modal design**: Automatically sizes to fit window with 40px padding
+- **Modal size memory**: Preserves user's custom size and position between sessions
+
+#### 🖱️ **Modal Interactions**
+- **Resizable modals**: CSS resize handle with visual feedback
+- **Draggable modals**: Full drag support with smart boundary detection
+- **Text selection prevention**: No unwanted highlighting during drag/resize operations
+- **Smart initialization**: Responsive sizing only on first load, then remembers user preferences
+
+#### 🔒 **Security Enhancements**
+- **XSS vulnerability fix**: Complete prevention of script execution in modal content
+- **Safe HTML entity decoding**: Proper display of encoded characters (e.g., `&lt;script&gt;` → `<script>`)
+- **Secure JSON display**: Raw JSON view now shows decoded entities without XSS risk
+- **Input sanitization**: All user data safely handled and displayed
+
+#### ⚡ **Performance & Usability**
+- **Modal content adaptation**: Content scrolls and adapts to different modal sizes
+- **Improved drag logic**: Prevents modal closing after resize operations
+- **Content preservation**: Scroll position maintained during resize operations
+- **Better cursor feedback**: Visual indicators for drag and resize operations
+
+### Version 1.0
+**Initial Release**
+- Basic log viewing functionality
+- Search and pagination
+- Modal log details
+- Dark theme interface
+
 ## Documentation
 - **[PERFORMANCE_IMPROVEMENTS.md](PERFORMANCE_IMPROVEMENTS.md)**: Detailed performance optimization documentation
 - **[SECURITY_IMPROVEMENTS.md](SECURITY_IMPROVEMENTS.md)**: Security measures and XSS prevention details

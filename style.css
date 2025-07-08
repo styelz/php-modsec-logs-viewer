@@ -671,3 +671,21 @@ tbody tr td:first-child {
 #rawLogModal:hover::after {
     opacity: 1;
 }
+
+/* Prevent text selection during modal drag/resize operations */
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dragging-modal {
+    cursor: move !important;
+}
+
+.resizing-modal {
+    cursor: nw-resize !important;
+}
