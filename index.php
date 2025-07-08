@@ -847,11 +847,16 @@ foreach ($logs as $index => $log) {
                 // Reapply search with new sorted data
                 performSearch(currentSearchTerm);
             } else {
-                // Reset pagination to show all entries
+                // Update pagination to preserve current page if possible
                 $visibleRows = $allRows;
                 totalRows = $allRows.length;
                 totalPages = Math.ceil(totalRows / rowsPerPage);
-                currentPage = 1;
+                
+                // Keep current page if still valid, otherwise go to last valid page
+                if (currentPage > totalPages) {
+                    currentPage = Math.max(1, totalPages);
+                }
+                
                 $('#pageInput').attr('max', totalPages);
                 renderTablePage(currentPage);
             }

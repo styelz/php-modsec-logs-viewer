@@ -36,6 +36,10 @@ th {
     vertical-align: middle; /* Center header content vertically */
     text-align: left;
     height: 30px; /* Ensures consistent header height */
+    position: sticky;
+    top: -1px; /* Offset by border width to eliminate gap */
+    z-index: 10; /* Ensure header stays above table content */
+    box-shadow: 0 1px 0 0 #333; /* Add shadow to cover any remaining gap */
 }
 
 tr:nth-child(even) {
