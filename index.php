@@ -707,8 +707,20 @@ foreach ($logs as $index => $log) {
         $('th[data-col]:not([data-col="datetime"]) .sort-icon').html('&#8597;');
 
         // Helper functions for sorting
-        const isIPv4 = str => /^(\d{1,3}\.){3}\d{1,3}$/.test(str);
-        const ip2num = ip => ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+        const isIPv4 = str => {
+            if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(str)) return false;
+            return str.split('.').every(octet => {
+                const num = parseInt(octet, 10);
+                return num >= 0 && num <= 255 && octet === num.toString();
+            });
+        };
+        const ip2num = ip => {
+            const parts = ip.split('.');
+            return ((parseInt(parts[0], 10) << 24) >>> 0) +
+                   ((parseInt(parts[1], 10) << 16) >>> 0) +
+                   ((parseInt(parts[2], 10) << 8) >>> 0) +
+                   parseInt(parts[3], 10);
+        };
         
         function decodeHtmlForSort(html) {
             const textarea = document.createElement('textarea');
@@ -767,8 +779,14 @@ foreach ($logs as $index => $log) {
                 } else if (col === 'client_ip') {
                     const ipA = decodeHtmlForSort(a.client_ip);
                     const ipB = decodeHtmlForSort(b.client_ip);
-                    valA = ip2num(ipA);
-                    valB = ip2num(ipB);
+                    if (isIPv4(ipA) && isIPv4(ipB)) {
+                        valA = ip2num(ipA);
+                        valB = ip2num(ipB);
+                    } else {
+                        // Fallback to string comparison for IPv6 or malformed IPs
+                        valA = ipA.toLowerCase();
+                        valB = ipB.toLowerCase();
+                    }
                 } else if (col === 'severity') {
                     valA = decodeHtmlForSort(a.severity).toLowerCase();
                     valB = decodeHtmlForSort(b.severity).toLowerCase();
